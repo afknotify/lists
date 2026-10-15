@@ -18,7 +18,7 @@ jobs:
           python-version: "3.15"
 
       - name: Install requirements
-        run: pip -m install requests
+        run: python -m pip install requests
 
       - name: Run script
         run: python lists_movies_series.py
