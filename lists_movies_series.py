@@ -1,3 +1,5 @@
+import requests
+
 base = (
     "https://dracid-lists-addon.dracid.workers.dev"
     "/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw"
