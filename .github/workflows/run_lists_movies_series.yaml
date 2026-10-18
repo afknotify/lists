@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Fetch IDs
-        run: python3 update_ids.py
+        run: python3 lists_movies_series.py
 
       - name: Commit updated files
         run: |
