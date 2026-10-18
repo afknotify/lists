@@ -37,8 +37,8 @@ jobs:
       - name: Prepare Pages files
         run: |
           mkdir -p _site
-          cp released-series-ids.txt _site/series.txt
-          cp released-movie-ids.txt _site/movie.txt
+          cp movies.txt _site/movies.txt
+          cp series.txt _site/series.txt
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
