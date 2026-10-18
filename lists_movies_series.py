@@ -4,7 +4,7 @@ import requests
 
 
 # Use the API base URL from your existing script.
-BASE_URL = "https://afknotify.github.io"
+BASE_URL = "https://your-api-base-url"
 
 # Replace the catalog IDs with the ones from your existing script.
 # Keep the `kind` values exactly as your API expects.
