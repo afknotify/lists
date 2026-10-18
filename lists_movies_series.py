@@ -2,10 +2,10 @@ import json
 import urllib.request
 
 SOURCES = {
-    "released-movie-ids.txt":
-        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/movie/released-movies.json",
     "released-series-ids.txt":
         "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/series/released-series.json",
+    "released-movie-ids.txt":
+        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/movie/released-movies.json",
 }
 
 for filename, url in SOURCES.items():
