@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
 
-# Configuration
 BASE_URL = "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw"
 SITE_URL = "https://afknotify.github.io/lists/"
 
@@ -34,9 +33,10 @@ for catalog in manifest.get("catalogs", []):
         for meta in metas:
             item_id = meta.get("id", "")
             if item_id.startswith("tt") and item_id[2:].isdigit():
+                # Store both ID and Title for the RSS feed
                 data_by_kind[kind].append({
                     "id": item_id,
-                    "title": meta.get("name", item_id)
+                    "title": meta.get("name", item_id) # Fallback to ID if name is missing
                 })
 
         skip += len(metas)
@@ -50,6 +50,7 @@ def generate_rss(kind, items, filename):
             unique_items.append(item)
             seen.add(item["id"])
 
+    # Build the RSS XML manually to avoid extra dependencies
     rss_items = ""
     for item in unique_items:
         rss_items += f"""
