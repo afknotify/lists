@@ -28,17 +28,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add series.txt movie.txt
+          git add series.txt movies.txt
           if ! git diff --cached --quiet; then
             git commit -m "Update released movie and series IDs"
             git push
           fi
-
+          
       - name: Prepare Pages files
         run: |
           mkdir -p _site
-          cp series.txt _site/series.txt
-          cp movies.txt _site/movies.txt
+          cp series.txt _site/lists/series.txt
+          cp movies.txt _site/lists/movies.txt
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
