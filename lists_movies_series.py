@@ -1,48 +1,76 @@
 import requests
 
-# Set these to the values from your existing script.
-BASE_URL = "https://your-server.example"
-kind = "movie"
-catalog_id = "your-catalog-id"
+# Keep the API base URL from your existing script.
+BASE_URL = "https://afk"
 
-OUTPUT_FILE = "imdb_ids.txt"
+# Replace these placeholders with your existing catalog IDs.
+# Use the same `kind` values your API expects (often "series" and "movie").
+CATALOGS = [
+    {"kind": "series", "catalog_id": "YOUR_SERIES_CATALOG_ID"},
+    {"kind": "movie", "catalog_id": "YOUR_MOVIES_CATALOG_ID"},
+]
 
 session = requests.Session()
-skip = 0
-catalog_total = 0
-imdb_ids = []
+ids_by_file = {
+    "series.txt": [],
+    "movies.txt": [],
+}
 
-while True:
-    # Use a query parameter (?skip=) instead of a path segment (/skip=).
-    url = f"{BASE_URL.rstrip('/')}/catalog/{kind}/{catalog_id}.json?skip={skip}"
+for catalog in CATALOGS:
+    kind = catalog["kind"]
+    catalog_id = catalog["catalog_id"]
 
-    try:
-        response = session.get(url, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        metas = data.get("metas", [])
-    except Exception as e:
-        print(f"\nError fetching {url}: {e}")
-        break
+    if kind == "series":
+        output_file = "series.txt"
+    elif kind in ("movie", "movies"):
+        output_file = "movies.txt"
+    else:
+        print(f"Skipping unsupported catalog kind: {kind}")
+        continue
 
-    if not metas:
-        break
+    skip = 0
+    catalog_total = 0
 
-    for meta in metas:
-        item_id = meta.get("id", "")
+    while True:
+        url = (
+            f"{BASE_URL.rstrip('/')}/catalog/{kind}/{catalog_id}.json"
+            f"?skip={skip}"
+        )
 
-        if isinstance(item_id, str) and item_id.startswith("tt") and item_id[2:].isdigit():
-            imdb_ids.append(item_id)
+        try:
+            response = session.get(url, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            metas = data.get("metas", [])
+        except Exception as e:
+            print(f"\nError fetching {url}: {e}")
+            break
 
-    catalog_total += len(metas)
-    skip += len(metas)
-    print(f"({catalog_total} items...)", end=" ")
+        if not metas:
+            break
 
-# Remove duplicates while preserving the original order.
-unique_ids = list(dict.fromkeys(imdb_ids))
+        for meta in metas:
+            item_id = meta.get("id", "")
+            if (
+                isinstance(item_id, str)
+                and item_id.startswith("tt")
+                and item_id[2:].isdigit()
+            ):
+                ids_by_file[output_file].append(item_id)
 
-with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
-    for imdb_id in unique_ids:
-        file.write(f"{imdb_id}\n")
+        catalog_total += len(metas)
+        skip += len(metas)
+        print(f"{kind} catalog: {catalog_total} items fetched", end="\r")
 
-print(f"\nSaved {len(unique_ids)} IMDb IDs to {OUTPUT_FILE}")
+# Remove duplicates, preserving order, then write one IMDb ID per line.
+for filename, ids in ids_by_file.items():
+    unique_ids = list(dict.fromkeys(ids))
+
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write("\n".join(unique_ids))
+        if unique_ids:
+            file.write("\n")
+
+    print(f"Saved {len(unique_ids)} IMDb IDs to {filename}")
+
+session.close()
