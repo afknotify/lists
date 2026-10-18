@@ -1,7 +1,6 @@
 import requests
 from datetime import datetime
 
-# Configuration
 BASE_URL = "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw"
 SITE_URL = "https://afknotify.github.io/lists/"
 
@@ -16,27 +15,47 @@ def escape_xml(text):
                 .replace("'", "&apos;"))
 
 session = requests.Session()
+print("Fetching manifest...")
 manifest = session.get(f"{BASE_URL}/manifest.json", timeout=30).json()
 
 data_by_kind = {
     "movie": [],
     "series": [],
 }
+KIND_MAP = {
+    "movie": "movie",
+    "series": "series",
+    "tv": "series" 
+}
 
-for catalog in manifest.get("catalogs", []):
-    kind = catalog["type"]
-    if kind not in data_by_kind:
+catalogs = manifest.get("catalogs", [])
+print(f"Found {len(catalogs)} total catalogs in manifest.")
+
+for catalog in catalogs:
+    raw_kind = catalog["type"]
+    
+    kind = KIND_MAP.get(raw_kind)
+    if not kind:
+        print(f"Skipping unknown catalog type: {raw_kind}")
         continue
 
     catalog_id = catalog["id"]
+    print(f"Processing {kind} catalog: {catalog_id}...", end=" ")
+    
     skip = 0
+    catalog_total = 0
 
     while True:
         suffix = "" if skip == 0 else f"/skip={skip}"
         url = f"{BASE_URL}/catalog/{kind}/{catalog_id}{suffix}.json"
-        response = session.get(url, timeout=30)
-        response.raise_for_status()
-        metas = response.json().get("metas", [])
+        
+        try:
+            response = session.get(url, timeout=30)
+            response.raise_for_status()
+            metas = response.json().get("metas", [])
+        except Exception as e:
+            print(f"\nError fetching {url}: {e}")
+            break
 
         if not metas:
             break
@@ -49,7 +68,11 @@ for catalog in manifest.get("catalogs", []):
                     "title": meta.get("name", item_id)
                 })
 
+        catalog_total += len(metas)
         skip += len(metas)
+        print(f"({catalog_total} items...)", end=" ")
+
+    print(f"Done. Total: {catalog_total}")
 
 def generate_rss(kind, items, filename):
     seen = set()
@@ -61,9 +84,7 @@ def generate_rss(kind, items, filename):
 
     rss_items = ""
     for item in unique_items:
-        # We escape the title here to prevent XML errors
         safe_title = escape_xml(item['title'])
-        
         rss_items += f"""
         <item>
             <title>{safe_title}</title>
@@ -85,7 +106,8 @@ def generate_rss(kind, items, filename):
 
     with open(filename, "w", encoding="utf-8") as f:
         f.write(rss_content)
-    print(f"Saved {len(unique_items)} {kind} items to {filename}")
+    print(f"Successfully saved {len(unique_items)} unique {kind} items to {filename}")
 
+# Generate the files
 generate_rss("movie", data_by_kind["movie"], "movies.xml")
 generate_rss("series", data_by_kind["series"], "series.xml")
