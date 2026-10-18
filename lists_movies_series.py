@@ -3,9 +3,9 @@ import urllib.request
 
 SOURCES = {
     "released-series-ids.txt":
-        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/movie/released-movies.json",
-    "released-movie-ids.txt":
         "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/series/released-series.json",
+    "released-movie-ids.txt":
+        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/movie/released-movies.json",
 }
 
 for filename, url in SOURCES.items():
@@ -28,9 +28,7 @@ for filename, url in SOURCES.items():
     ))
 
     if not ids:
-        raise ValueError(
-            f"No IDs found for {filename}; existing file will not be replaced"
-        )
+        raise ValueError(f"No IDs found for {filename}")
 
     with open(filename, "w", encoding="utf-8") as output:
         output.write("\n".join(ids) + "\n")
