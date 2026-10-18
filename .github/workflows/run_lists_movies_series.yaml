@@ -1,4 +1,4 @@
-name: Run Github Workflow Action to update lists
+name: Update movie and series IDs
 
 on:
   schedule:
