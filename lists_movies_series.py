@@ -5,7 +5,7 @@ SOURCES = {
     "released-series-ids.txt":
         "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/movie/released-movies.json",
     "released-movie-ids.txt":
-        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/series/released-series.jsonm",
+        "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw/catalog/series/released-series.json",
 }
 
 for filename, url in SOURCES.items():
