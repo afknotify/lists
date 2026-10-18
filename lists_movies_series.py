@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
-import timezone # Not needed, using datetime.utcnow
 
+# Configuration
 BASE_URL = "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw"
 SITE_URL = "https://afknotify.github.io/lists/"
 
@@ -42,6 +42,7 @@ for catalog in manifest.get("catalogs", []):
         skip += len(metas)
 
 def generate_rss(kind, items, filename):
+    # Remove duplicates while preserving order
     seen = set()
     unique_items = []
     for item in items:
@@ -74,5 +75,6 @@ def generate_rss(kind, items, filename):
         f.write(rss_content)
     print(f"Saved {len(unique_items)} {kind} items to {filename}")
 
+# Generate the files
 generate_rss("movie", data_by_kind["movie"], "movies.xml")
 generate_rss("series", data_by_kind["series"], "series.xml")
