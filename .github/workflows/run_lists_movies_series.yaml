@@ -28,7 +28,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add released-series-ids.txt released-movie-ids.txt
+          git add series.txt movie.txt
           if ! git diff --cached --quiet; then
             git commit -m "Update released movie and series IDs"
             git push
