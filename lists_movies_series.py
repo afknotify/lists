@@ -1,8 +1,19 @@
 import requests
 from datetime import datetime
 
+# Configuration
 BASE_URL = "https://dracid-lists-addon.dracid.workers.dev/c/cmVsZWFzZWQtbW92aWVzfnJlbGVhc2VkLXNlcmllcw"
 SITE_URL = "https://afknotify.github.io/lists/"
+
+def escape_xml(text):
+    """Convert special characters to XML-safe entities."""
+    if not text:
+        return ""
+    return (text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&apos;"))
 
 session = requests.Session()
 manifest = session.get(f"{BASE_URL}/manifest.json", timeout=30).json()
@@ -33,16 +44,14 @@ for catalog in manifest.get("catalogs", []):
         for meta in metas:
             item_id = meta.get("id", "")
             if item_id.startswith("tt") and item_id[2:].isdigit():
-                # Store both ID and Title for the RSS feed
                 data_by_kind[kind].append({
                     "id": item_id,
-                    "title": meta.get("name", item_id) # Fallback to ID if name is missing
+                    "title": meta.get("name", item_id)
                 })
 
         skip += len(metas)
 
 def generate_rss(kind, items, filename):
-    # Remove duplicates while preserving order
     seen = set()
     unique_items = []
     for item in items:
@@ -50,12 +59,14 @@ def generate_rss(kind, items, filename):
             unique_items.append(item)
             seen.add(item["id"])
 
-    # Build the RSS XML manually to avoid extra dependencies
     rss_items = ""
     for item in unique_items:
+        # We escape the title here to prevent XML errors
+        safe_title = escape_xml(item['title'])
+        
         rss_items += f"""
         <item>
-            <title>{item['title']}</title>
+            <title>{safe_title}</title>
             <link>https://www.imdb.com/title/{item['id']}/</link>
             <guid>https://www.imdb.com/title/{item['id']}/</guid>
             <description>IMDb ID: {item['id']}</description>
@@ -76,6 +87,5 @@ def generate_rss(kind, items, filename):
         f.write(rss_content)
     print(f"Saved {len(unique_items)} {kind} items to {filename}")
 
-# Generate the files
 generate_rss("movie", data_by_kind["movie"], "movies.xml")
 generate_rss("series", data_by_kind["series"], "series.xml")
