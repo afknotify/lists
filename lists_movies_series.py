@@ -1,10 +1,8 @@
 import requests
 
 # Keep the API base URL from your existing script.
-BASE_URL = "https://afk"
+BASE_URL = "https://afknotify.github.io"
 
-# Replace these placeholders with your existing catalog IDs.
-# Use the same `kind` values your API expects (often "series" and "movie").
 CATALOGS = [
     {"kind": "series", "catalog_id": "YOUR_SERIES_CATALOG_ID"},
     {"kind": "movie", "catalog_id": "YOUR_MOVIES_CATALOG_ID"},
@@ -62,7 +60,6 @@ for catalog in CATALOGS:
         skip += len(metas)
         print(f"{kind} catalog: {catalog_total} items fetched", end="\r")
 
-# Remove duplicates, preserving order, then write one IMDb ID per line.
 for filename, ids in ids_by_file.items():
     unique_ids = list(dict.fromkeys(ids))
 
