@@ -1,0 +1,55 @@
+name: Extract IMDb IDs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # Every Sunday at midnight UTC
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+
+      - name: Download the catalog repository
+        run: git clone --depth 1 https://github.com/dracid77/lists.git source
+
+      - name: Extract IMDb IDs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          catalog = Path("source/addon/catalog/movie/released-movies")
+          if not catalog.is_dir():
+              sys.exit(f"Catalog directory not found: {catalog}")
+
+          json_files = list(catalog.rglob("*.json"))
+          if not json_files:
+              sys.exit(f"No JSON files found under: {catalog}")
+
+          ids = set()
+          for path in json_files:
+              text = path.read_text(encoding="utf-8")
+              ids.update(re.findall(r"\btt\d{7,}\b", text))
+
+          Path("imdb_ids.txt").write_text(
+              "".join(f"{imdb_id}\n" for imdb_id in sorted(ids)),
+              encoding="utf-8",
+          )
+
+          print(f"Scanned {len(json_files)} JSON files; found {len(ids)} unique IDs.")
+          PY
+
+      - name: Upload IMDb IDs
+        uses: actions/upload-artifact@v4
+        with:
+          name: imdb-ids
+          path: imdb_ids.txt
