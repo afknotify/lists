@@ -26,16 +26,18 @@ def find_value(record, keys):
 
 
 def records_in(value):
-    """Yield title/date records in the order they appear in the JSON."""
+    """Yield title/date records in JSON order, marking absent dates."""
     if isinstance(value, list):
         for item in value:
             yield from records_in(item)
+
     elif isinstance(value, dict):
         title = find_value(value, TITLE_KEYS)
         date = find_value(value, DATE_KEYS)
+        normalized_keys = {str(key).lower() for key in value}
 
-        if title and date:
-            yield title, date
+        if title and (date or "id" in normalized_keys or "type" in normalized_keys):
+            yield title, date or "date unavailable"
             return
 
         for child in value.values():
