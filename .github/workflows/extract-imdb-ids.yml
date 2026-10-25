@@ -1,4 +1,4 @@
-name: Export released movie IMDb IDs
+name: Export IMDb IDs
 
 on:
   schedule:
@@ -8,84 +8,26 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: export-imdb-ids
+  cancel-in-progress: true
+
 jobs:
   export:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - name: Check out this repository
+        uses: actions/checkout@v6
 
-      - name: Fetch JSON files and export IMDb IDs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          import re
-          import urllib.request
-          from pathlib import Path
-
-          api_url = (
-              "https://api.github.com/repos/dracid77/lists/contents/"
-              "addon/catalog/movie/released-movies"
-          )
-          request = urllib.request.Request(
-              api_url,
-              headers={
-                  "Accept": "application/vnd.github+json",
-                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-          )
-
-          with urllib.request.urlopen(request) as response:
-              entries = json.load(response)
-
-          files = sorted(
-              (
-                  item for item in entries
-                  if item["type"] == "file"
-                  and item["name"].lower().endswith(".json")
-              ),
-              key=lambda item: item["name"].lower(),
-          )
-
-          imdb_pattern = re.compile(r"\btt\d+\b")
-          ids = []
-
-          def collect_strings(value):
-              if isinstance(value, str):
-                  yield value
-              elif isinstance(value, list):
-                  for item in value:
-                      yield from collect_strings(item)
-              elif isinstance(value, dict):
-                  for item in value.values():
-                      yield from collect_strings(item)
-
-          for item in files:
-              with urllib.request.urlopen(item["download_url"]) as response:
-                  data = json.load(response)
-
-              for text in collect_strings(data):
-                  ids.extend(imdb_pattern.findall(text))
-
-          Path("released-movies-imdb-ids.txt").write_text(
-              "".join(f"{imdb_id}\n" for imdb_id in ids),
-              encoding="utf-8",
-          )
-          print(f"Exported {len(ids)} IDs from {len(files)} JSON files.")
-          PY
+      - name: Export IMDb IDs
+        run: python3 scripts/export_imdb_ids.py
 
       - name: Commit updated text file
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add released-movies-imdb-ids.txt
-          if git diff --cached --quiet; then
-            echo "No changes to publish."
-            exit 0
+          git add imdb_ids.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Update IMDb IDs"
+            git push
           fi
-          git commit -m "Update released movie IMDb IDs"
-          git push
