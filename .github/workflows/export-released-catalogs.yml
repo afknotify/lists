@@ -3,7 +3,7 @@ name: Export released movie and series lists
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 6 * * *"
+    - cron: "0 * * * *"
   push:
     paths:
       - ".github/workflows/export-released-catalogs.yml"
