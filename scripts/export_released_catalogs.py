@@ -25,23 +25,22 @@ def find_value(record, keys):
     return None
 
 
-def records_in(value):
-    """Yield title/date records in JSON order, marking absent dates."""
+def ids_in(value):
+    """Yield entry IDs in the order they appear in the JSON."""
     if isinstance(value, list):
         for item in value:
-            yield from records_in(item)
+            yield from ids_in(item)
 
     elif isinstance(value, dict):
-        title = find_value(value, TITLE_KEYS)
-        date = find_value(value, DATE_KEYS)
-        normalized_keys = {str(key).lower() for key in value}
+        normalized = {str(key).lower(): item for key, item in value.items()}
+        entry_id = normalized.get("id")
 
-        if title and (date or "id" in normalized_keys or "type" in normalized_keys):
-            yield title, date or "date unavailable"
+        if entry_id is not None and str(entry_id).strip():
+            yield str(entry_id).strip()
             return
 
         for child in value.values():
-            yield from records_in(child)
+            yield from ids_in(child)
 
 
 def export_folder(source_dir, primary_filename, output_file):
