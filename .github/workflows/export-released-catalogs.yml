@@ -1,0 +1,46 @@
+name: Export released movie and series lists
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * *"
+  push:
+    paths:
+      - ".github/workflows/export-released-catalogs.yml"
+      - "scripts/export_released_catalogs.py"
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Download source lists
+        run: git clone --depth 1 https://github.com/Dracid77/lists.git source-lists
+
+      - name: Generate text files
+        run: |
+          python scripts/export_released_catalogs.py \
+            source-lists/addon/catalog/movie/released-movies \
+            source-lists/addon/catalog/series/released-series \
+            output
+
+      - name: Commit updated text files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/released-movies.txt output/released-series.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Update released movie and series lists"
+            git push
+          fi
