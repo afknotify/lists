@@ -1,18 +1,74 @@
-def export_folder(source_dir, output_file):
+import json
+import sys
+from pathlib import Path
+
+TITLE_KEYS = ("title", "name")
+DATE_KEYS = (
+    "release_date",
+    "releasedate",
+    "releaseinfo",
+    "released",
+    "premiered",
+    "date",
+    "year",
+)
+
+
+def find_value(record, keys):
+    normalized = {str(key).lower(): value for key, value in record.items()}
+
+    for key in keys:
+        value = normalized.get(key)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+
+    return None
+
+
+def records_in(value):
+    """Yield title/date records in the order they appear in the JSON."""
+    if isinstance(value, list):
+        for item in value:
+            yield from records_in(item)
+    elif isinstance(value, dict):
+        title = find_value(value, TITLE_KEYS)
+        date = find_value(value, DATE_KEYS)
+
+        if title and date:
+            yield title, date
+            return
+
+        for child in value.values():
+            yield from records_in(child)
+
+
+def export_folder(source_dir, primary_filename, output_file):
     source_dir = Path(source_dir)
     if not source_dir.is_dir():
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
 
-    # For example, released-movies/ uses the sibling released-movies.json first.
-    primary_json = source_dir.parent / f"{source_dir.name}.json"
-    if not primary_json.is_file():
-        raise FileNotFoundError(f"Priority JSON file not found: {primary_json}")
+    # Support either the catalog root (primary file inside it) or a
+    # released-movies/released-series subdirectory (primary file beside it).
+    primary_candidates = (
+        source_dir / primary_filename,
+        source_dir.parent / primary_filename,
+    )
+    primary_json = next(
+        (path for path in primary_candidates if path.is_file()),
+        None,
+    )
+    if primary_json is None:
+        raise FileNotFoundError(
+            f"Priority JSON file not found. Checked: "
+            f"{', '.join(str(path) for path in primary_candidates)}"
+        )
 
+    # Process the specified primary file first, then the remaining JSON files.
     json_files = [primary_json]
     json_files.extend(
         path
         for path in sorted(source_dir.rglob("*.json"))
-        if path != primary_json
+        if path.resolve() != primary_json.resolve()
     )
 
     lines = []
@@ -20,8 +76,11 @@ def export_folder(source_dir, output_file):
         with json_file.open(encoding="utf-8") as file:
             data = json.load(file)
 
-        # Preserve item order within each JSON file.
-        lines.extend(f"{title} ({date})" for title, date in records_in(data))
+        # Keep each file's items in their original order.
+        lines.extend(
+            f"{title} ({date})"
+            for title, date in records_in(data)
+        )
 
     if not lines:
         raise ValueError(f"No title/date records found in {source_dir}")
@@ -30,3 +89,28 @@ def export_folder(source_dir, output_file):
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {len(lines)} entries to {output_file}")
+
+
+def main():
+    if len(sys.argv) != 4:
+        raise SystemExit(
+            "Usage: export_released_catalogs.py MOVIES_DIR SERIES_DIR OUTPUT_DIR"
+        )
+
+    movies_dir, series_dir, output_dir = sys.argv[1:]
+    output_dir = Path(output_dir)
+
+    export_folder(
+        movies_dir,
+        "released-movies.json",
+        output_dir / "released-movies.txt",
+    )
+    export_folder(
+        series_dir,
+        "released-series.json",
+        output_dir / "released-series.txt",
+    )
+
+
+if __name__ == "__main__":
+    main()
