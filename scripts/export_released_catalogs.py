@@ -15,10 +15,10 @@ def ids_in(value):
 
         if entry_id is not None and str(entry_id).strip():
             yield str(entry_id).strip()
-            return
 
-        for child in value.values():
-            yield from ids_in(child)
+        for key, child in value.items():
+            if str(key).lower() != "id":
+                yield from ids_in(child)
 
 
 def export_folder(source_dir, primary_filename, output_file):
