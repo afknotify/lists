@@ -2,28 +2,6 @@ import json
 import sys
 from pathlib import Path
 
-TITLE_KEYS = ("title", "name")
-DATE_KEYS = (
-    "release_date",
-    "releasedate",
-    "releaseinfo",
-    "released",
-    "premiered",
-    "date",
-    "year",
-)
-
-
-def find_value(record, keys):
-    normalized = {str(key).lower(): value for key, value in record.items()}
-
-    for key in keys:
-        value = normalized.get(key)
-        if value is not None and str(value).strip():
-            return str(value).strip()
-
-    return None
-
 
 def ids_in(value):
     """Yield entry IDs in the order they appear in the JSON."""
@@ -48,8 +26,7 @@ def export_folder(source_dir, primary_filename, output_file):
     if not source_dir.is_dir():
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
 
-    # Support either the catalog root (primary file inside it) or a
-    # released-movies/released-series subdirectory (primary file beside it).
+    # Check for the priority file inside the source directory or beside it.
     primary_candidates = (
         source_dir / primary_filename,
         source_dir.parent / primary_filename,
@@ -64,7 +41,7 @@ def export_folder(source_dir, primary_filename, output_file):
             f"{', '.join(str(path) for path in primary_candidates)}"
         )
 
-    # Process the specified primary file first, then the remaining JSON files.
+    # Process the priority file first, then the remaining JSON files.
     json_files = [primary_json]
     json_files.extend(
         path
@@ -77,14 +54,10 @@ def export_folder(source_dir, primary_filename, output_file):
         with json_file.open(encoding="utf-8") as file:
             data = json.load(file)
 
-        # Keep each file's items in their original order.
-        lines.extend(
-            f"{title} ({date})"
-            for title, date in records_in(data)
-        )
+        lines.extend(ids_in(data))
 
     if not lines:
-        raise ValueError(f"No title/date records found in {source_dir}")
+        raise ValueError(f"No entry IDs found in {source_dir}")
 
     output_file = Path(output_file)
     output_file.parent.mkdir(parents=True, exist_ok=True)
