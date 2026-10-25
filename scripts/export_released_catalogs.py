@@ -56,7 +56,7 @@ def export_folder(source_dir, output_file):
         with json_file.open(encoding="utf-8") as file:
             data = json.load(file)
 
-        lines.extend(f'{title} "{date}"' for title, date in records_in(data))
+        lines.extend(f"{title} ({date})" for title, date in records_in(data))
 
     if not lines:
         raise ValueError(f"No title/date records found in {source_dir}")
